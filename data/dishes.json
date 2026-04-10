@@ -1,0 +1,86 @@
+[
+  {
+    "id": "c41532f3-ee9f-4d02-84db-a4977c4f93c0",
+    "name": "Руло стефани",
+    "notes": "кайма, яйца, моркови, кисели краставички",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "dc80267b-7abe-4966-a2c7-956ab1f64cb5",
+    "name": "мусака",
+    "notes": "кайма, картофи",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "c48a286c-2153-4ef5-a1ae-d7aeaf7169e1",
+    "name": "пиле с ориз",
+    "notes": "пилешко без кокали, ориз",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "0ec2c514-9796-4bb7-a709-176f1678ee3e",
+    "name": "риба",
+    "notes": "сьомга",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "de950550-8af7-4a45-83fa-6494b6405237",
+    "name": "кюфтета по чирпански",
+    "notes": "",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "aeb308c2-ea52-4c0e-ab85-396e539e1ff0",
+    "name": "пиле с картофи и сметана",
+    "notes": "пиле, картофи, сметана",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "86cf9eef-1d97-43e5-aaec-7fa47021b054",
+    "name": "кебапчета",
+    "notes": "ловджийски наденички или нещо подобно",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "475d666b-9f0a-4648-be36-0425b7915c3b",
+    "name": "бургер",
+    "notes": "хлебче, бургер, слайс чедър",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "04bf9a85-2447-4b55-a061-cab33cf65471",
+    "name": "паста",
+    "notes": "паста, сос, шунка/кайма",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "c558a953-52c3-4d7b-b964-ec27941b4c95",
+    "name": "супа",
+    "notes": "пилешка/спаначена/топчета/крем",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "6bdb1937-0b90-4075-b352-48784983ca6e",
+    "name": "гръцки питки",
+    "notes": "гръцки питки, шунка/салами",
+    "cookCount": 0,
+    "cookHistory": []
+  },
+  {
+    "id": "bac0210d-4bdc-47f3-811e-c29dbc1131a8",
+    "name": "пържени картофи",
+    "notes": "бланширани/пресни",
+    "cookCount": 0,
+    "cookHistory": []
+  }
+]

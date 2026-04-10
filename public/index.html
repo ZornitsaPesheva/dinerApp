@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="bg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Манджи</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero">
+        <p class="eyebrow">План за готвене</p>
+        <h1>Коя манджа е ред да сготвиш?</h1>
+        <p class="hero-copy">
+          Приложението пази списък с манджи, брои колко пъти са готвени и кога за последно,
+          после предлага най-отдавна готвената и най-рядко готвената.
+        </p>
+      </section>
+
+      <section class="panel auth-panel">
+        <article class="card auth-card">
+          <div class="card-header auth-header">
+            <div>
+              <h2>Google вход</h2>
+              <p class="auth-copy">Влез с Google, за да имаш отделен JSON файл и собствен списък с манджи.</p>
+            </div>
+            <button id="logout-button" class="ghost-btn" type="button" hidden>Изход</button>
+          </div>
+
+          <div id="auth-user" class="auth-user" hidden>
+            <img id="user-avatar" class="user-avatar" alt="" />
+            <div>
+              <p id="user-name" class="auth-user-name"></p>
+              <p id="user-email" class="auth-user-email"></p>
+            </div>
+          </div>
+
+          <div id="google-signin" class="google-signin"></div>
+          <p id="auth-message" class="message" aria-live="polite"></p>
+        </article>
+      </section>
+
+      <div id="app-shell" hidden>
+        <section class="panel panel-grid">
+          <article class="card add-card">
+            <h2>Добави нова манджа</h2>
+            <form id="dish-form" class="stack">
+              <label class="field">
+                <span>Име</span>
+                <input id="dish-name" name="name" type="text" maxlength="80" required />
+              </label>
+              <label class="field">
+                <span>Бележка</span>
+                <textarea id="dish-notes" name="notes" rows="3" maxlength="200"></textarea>
+              </label>
+              <button type="submit" class="primary-btn">Запиши</button>
+            </form>
+            <p id="form-message" class="message" aria-live="polite"></p>
+          </article>
+
+          <article class="card suggestions-card">
+            <div class="card-header">
+              <h2>Предложения за готвене</h2>
+              <button id="refresh-button" class="ghost-btn" type="button">Обнови</button>
+            </div>
+            <div id="suggestions" class="suggestions-list"></div>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="card-header">
+            <h2>Всички манджи</h2>
+            <p class="section-note">Натисни „Сготвих я“, за да се запише новото готвене.</p>
+          </div>
+          <div id="dishes" class="dish-list"></div>
+        </section>
+      </div>
+    </main>
+
+    <template id="suggestion-template">
+      <article class="suggestion-item">
+        <div>
+          <p class="suggestion-label"></p>
+          <h3 class="suggestion-name"></h3>
+          <p class="suggestion-meta"></p>
+        </div>
+      </article>
+    </template>
+
+    <template id="dish-template">
+      <article class="dish-item">
+        <div class="dish-main">
+          <div>
+            <h3 class="dish-name"></h3>
+            <p class="dish-notes"></p>
+          </div>
+          <button class="primary-btn cook-button" type="button">Сготвих я</button>
+        </div>
+        <div class="dish-meta-row">
+          <span class="meta-pill count-pill"></span>
+          <span class="meta-pill last-pill"></span>
+        </div>
+      </article>
+    </template>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/app.js"></script>
+  </body>
+  </html>
