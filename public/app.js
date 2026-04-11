@@ -24,6 +24,12 @@ const state = {
 
 let googleButtonInitialized = false;
 
+function getFallbackAvatarDataUri(name = '') {
+  const firstLetter = (name || 'U').trim().charAt(0).toUpperCase() || 'U';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="#d9b79f"/><text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, serif" font-size="30" fill="#5b3a24">${firstLetter}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 async function requestJson(url, options = {}) {
   const response = await fetch(url, {
     headers: {
@@ -112,6 +118,7 @@ function renderAuthState() {
   const isAuthenticated = Boolean(state.user);
 
   authIntroElement.hidden = isAuthenticated;
+  authMessageElement.hidden = isAuthenticated;
   logoutButton.hidden = !isAuthenticated;
   authUserElement.hidden = !isAuthenticated;
   googleSigninContainer.hidden = isAuthenticated;
@@ -120,13 +127,13 @@ function renderAuthState() {
     userNameElement.textContent = state.user.name || 'Google потребител';
     userEmailElement.textContent = state.user.email || '';
 
-    if (state.user.picture) {
-      userAvatarElement.src = state.user.picture;
-      userAvatarElement.hidden = false;
-    } else {
-      userAvatarElement.hidden = true;
-      userAvatarElement.removeAttribute('src');
-    }
+    const fallbackAvatar = getFallbackAvatarDataUri(state.user.name || state.user.email || 'Google');
+    userAvatarElement.src = state.user.picture || fallbackAvatar;
+    userAvatarElement.hidden = false;
+    userAvatarElement.onerror = () => {
+      userAvatarElement.onerror = null;
+      userAvatarElement.src = fallbackAvatar;
+    };
 
     setAuthMessage('');
     return;

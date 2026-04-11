@@ -309,4 +309,8 @@ button:hover {
   .primary-btn {
     width: 100%;
   }
+
+  #logout-button {
+    width: auto;
+  }
 }
