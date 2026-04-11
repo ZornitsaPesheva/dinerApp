@@ -15,6 +15,7 @@ const userAvatarElement = document.querySelector('#user-avatar');
 const userNameElement = document.querySelector('#user-name');
 const userEmailElement = document.querySelector('#user-email');
 const logoutButton = document.querySelector('#logout-button');
+const authIntroElement = document.querySelector('#auth-intro');
 
 const state = {
   googleClientId: '',
@@ -110,6 +111,7 @@ function renderGoogleButton() {
 function renderAuthState() {
   const isAuthenticated = Boolean(state.user);
 
+  authIntroElement.hidden = isAuthenticated;
   logoutButton.hidden = !isAuthenticated;
   authUserElement.hidden = !isAuthenticated;
   googleSigninContainer.hidden = isAuthenticated;
