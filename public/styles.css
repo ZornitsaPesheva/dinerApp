@@ -285,6 +285,14 @@ button:hover {
   background: rgba(117, 99, 82, 0.08);
 }
 
+.site-footer {
+  margin-top: 28px;
+  padding: 8px 20px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 @media (max-width: 800px) {
   .panel-grid {
     grid-template-columns: 1fr;
