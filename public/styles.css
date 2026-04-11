@@ -208,6 +208,10 @@ button:hover {
   background: var(--accent-soft);
 }
 
+#logout-button {
+  margin-left: auto;
+}
+
 .card-header,
 .dish-main,
 .dish-meta-row {
