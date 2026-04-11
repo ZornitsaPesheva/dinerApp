@@ -3,6 +3,8 @@ const fs = require('fs/promises');
 const path = require('path');
 const { createHmac, randomUUID, timingSafeEqual } = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
+const { cert, getApps, initializeApp } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
 
 const PORT = process.env.PORT || 3001;
 const DATA_DIR = path.join(__dirname, 'data');
@@ -13,6 +15,10 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '716007402302-ndd6hn2sh
 const SESSION_COOKIE_NAME = 'diner_session';
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7;
 const SESSION_SECRET = process.env.SESSION_SECRET || `dev-session-${randomUUID()}`;
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || '';
+const FIREBASE_CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL || '';
+const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY || '';
+const FIRESTORE_COLLECTION = process.env.FIRESTORE_COLLECTION || 'user_dishes';
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 const MIME_TYPES = {
@@ -69,6 +75,10 @@ async function ensureUserDataFile(userId) {
 }
 
 async function readDishes(userId) {
+  if (firestore) {
+    return readDishesFromFirestore(userId);
+  }
+
   const userFile = await ensureUserDataFile(userId);
   const raw = await fs.readFile(userFile, 'utf8');
   const parsed = JSON.parse((raw || '[]').replace(/^\uFEFF/, ''));
@@ -76,8 +86,69 @@ async function readDishes(userId) {
 }
 
 async function writeDishes(userId, dishes) {
+  if (firestore) {
+    await writeDishesToFirestore(userId, dishes);
+    return;
+  }
+
   const userFile = await ensureUserDataFile(userId);
   await fs.writeFile(userFile, `${JSON.stringify(dishes, null, 2)}\n`, 'utf8');
+}
+
+function createFirebaseFirestore() {
+  try {
+    if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
+      return null;
+    }
+
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: cert({
+          projectId: FIREBASE_PROJECT_ID,
+          clientEmail: FIREBASE_CLIENT_EMAIL,
+          privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        })
+      });
+    }
+
+    return getFirestore();
+  } catch (error) {
+    console.error('Firebase initialization failed. Falling back to local JSON storage.', error.message || error);
+    return null;
+  }
+}
+
+const firestore = createFirebaseFirestore();
+
+function getFirestoreUserDocument(userId) {
+  return firestore.collection(FIRESTORE_COLLECTION).doc(userId);
+}
+
+async function seedFirestoreUserDishes(userId) {
+  const seedData = await readLegacyDishes();
+  await getFirestoreUserDocument(userId).set({
+    dishes: seedData,
+    updatedAt: new Date().toISOString()
+  });
+  return seedData;
+}
+
+async function readDishesFromFirestore(userId) {
+  const snapshot = await getFirestoreUserDocument(userId).get();
+
+  if (!snapshot.exists) {
+    return seedFirestoreUserDishes(userId);
+  }
+
+  const payload = snapshot.data() || {};
+  return Array.isArray(payload.dishes) ? payload.dishes : [];
+}
+
+async function writeDishesToFirestore(userId, dishes) {
+  await getFirestoreUserDocument(userId).set({
+    dishes,
+    updatedAt: new Date().toISOString()
+  });
 }
 
 function parseCookies(cookieHeader = '') {
@@ -383,7 +454,7 @@ async function handleApi(request, response) {
 
     const user = await verifyGoogleCredential(credential);
     setSessionCookie(response, createSessionToken(user));
-    await ensureUserDataFile(user.sub);
+    await readDishes(user.sub);
     sendJson(response, 200, {
       googleClientId: GOOGLE_CLIENT_ID,
       user: getPublicUserProfile(user)
@@ -499,6 +570,12 @@ ensureDataFile()
   .then(() => {
     if (!process.env.SESSION_SECRET) {
       console.warn('SESSION_SECRET is not set. Using a temporary development session secret.');
+    }
+
+    if (firestore) {
+      console.log(`Firestore storage is enabled (collection: ${FIRESTORE_COLLECTION}).`);
+    } else {
+      console.log('Using local JSON storage from data/users.');
     }
 
     server.listen(PORT, () => {
