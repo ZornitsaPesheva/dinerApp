@@ -10,11 +10,11 @@
     <main class="page-shell">
       <section class="hero">
         <p class="eyebrow">План за готвене</p>
-        <h1>Коя манджа е ред да сготвиш?</h1>
-        <p class="hero-copy">
+        <h1>Какво да сготвим днес?</h1>
+        <!-- <p class="hero-copy">
           Приложението пази списък с манджи, брои колко пъти са готвени и кога за последно,
           после предлага най-отдавна готвената и най-рядко готвената.
-        </p>
+        </p> -->
       </section>
 
       <section class="panel auth-panel">
@@ -22,7 +22,7 @@
           <div class="card-header auth-header">
             <div>
               <h2>Google вход</h2>
-              <p class="auth-copy">Влез с Google, за да имаш отделен JSON файл и собствен списък с манджи.</p>
+              <p class="auth-copy">Влез с Google и създай свой личен списък с любими рецепти..</p>
             </div>
             <button id="logout-button" class="ghost-btn" type="button" hidden>Изход</button>
           </div>
@@ -43,14 +43,14 @@
       <div id="app-shell" hidden>
         <section class="panel panel-grid">
           <article class="card add-card">
-            <h2>Добави нова манджа</h2>
+            <h2>Добави нова рецепта</h2>
             <form id="dish-form" class="stack">
               <label class="field">
                 <span>Име</span>
                 <input id="dish-name" name="name" type="text" maxlength="80" required />
               </label>
               <label class="field">
-                <span>Бележка</span>
+                <span>Oписание</span>
                 <textarea id="dish-notes" name="notes" rows="3" maxlength="200"></textarea>
               </label>
               <button type="submit" class="primary-btn">Запиши</button>
@@ -69,8 +69,8 @@
 
         <section class="panel">
           <div class="card-header">
-            <h2>Всички манджи</h2>
-            <p class="section-note">Натисни „Сготвих я“, за да се запише новото готвене.</p>
+            <h2>Всички рецепти</h2>
+            <p class="section-note">Натисни „Сготвих я“, за да се отбележи като сготвена.</p>
           </div>
           <div id="dishes" class="dish-list"></div>
         </section>

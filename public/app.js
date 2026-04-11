@@ -149,7 +149,7 @@ function renderSuggestions(suggestions) {
   suggestionsContainer.innerHTML = '';
 
   if (suggestions.length === 0) {
-    suggestionsContainer.innerHTML = '<div class="empty-state">Добави манджа, за да видиш предложение.</div>';
+    suggestionsContainer.innerHTML = '<div class="empty-state">Добави рецепти, за да видиш предложения.</div>';
     return;
   }
 
