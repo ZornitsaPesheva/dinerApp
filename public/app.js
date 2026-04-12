@@ -11,11 +11,13 @@ const appShell = document.querySelector('#app-shell');
 const authMessageElement = document.querySelector('#auth-message');
 const googleSigninContainer = document.querySelector('#google-signin');
 const authUserElement = document.querySelector('#auth-user');
+const mobileAuthSlot = document.querySelector('#mobile-auth-slot');
 const userAvatarElement = document.querySelector('#user-avatar');
 const userNameElement = document.querySelector('#user-name');
 const userEmailElement = document.querySelector('#user-email');
 const logoutButton = document.querySelector('#logout-button');
 const authIntroElement = document.querySelector('#auth-intro');
+const authPanelElement = document.querySelector('.auth-panel');
 
 const state = {
   googleClientId: '',
@@ -23,6 +25,23 @@ const state = {
 };
 
 let googleButtonInitialized = false;
+const mobileMediaQuery = window.matchMedia('(max-width: 800px)');
+
+function syncAuthPlacement() {
+  const isAuthenticated = Boolean(state.user);
+  const isMobile = mobileMediaQuery.matches;
+
+  if (isAuthenticated && isMobile) {
+    mobileAuthSlot.hidden = false;
+    mobileAuthSlot.appendChild(authUserElement);
+    authPanelElement.hidden = true;
+    return;
+  }
+
+  mobileAuthSlot.hidden = true;
+  googleSigninContainer.before(authUserElement);
+  authPanelElement.hidden = false;
+}
 
 function getFallbackAvatarDataUri(name = '') {
   const firstLetter = (name || 'U').trim().charAt(0).toUpperCase() || 'U';
@@ -123,6 +142,8 @@ function renderAuthState() {
   authUserElement.hidden = !isAuthenticated;
   googleSigninContainer.hidden = isAuthenticated;
 
+  syncAuthPlacement();
+
   if (isAuthenticated) {
     userNameElement.textContent = state.user.name || 'Google потребител';
     userEmailElement.textContent = state.user.email || '';
@@ -144,6 +165,19 @@ function renderAuthState() {
   userAvatarElement.hidden = true;
   userAvatarElement.removeAttribute('src');
   renderGoogleButton();
+}
+
+function bindViewportListener() {
+  const handleViewportChange = () => {
+    syncAuthPlacement();
+  };
+
+  if (mobileMediaQuery.addEventListener) {
+    mobileMediaQuery.addEventListener('change', handleViewportChange);
+    return;
+  }
+
+  mobileMediaQuery.addListener(handleViewportChange);
 }
 
 async function resetSession(message = '', type = '') {
@@ -318,3 +352,4 @@ async function initializeApp() {
 }
 
 initializeApp();
+bindViewportListener();
