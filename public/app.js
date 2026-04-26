@@ -204,8 +204,26 @@ function renderSuggestions(suggestions) {
     fragment.querySelector('.suggestion-name').textContent = dish.name;
     fragment.querySelector('.suggestion-meta').textContent =
       `${dish.cookCount} готвения • Последно: ${formatDate(dish.lastCookedAt)}`;
+    fragment.querySelector('.cook-button').addEventListener('click', async () => {
+      await cookDish(dish.id);
+    });
     suggestionsContainer.appendChild(fragment);
   });
+}
+
+async function cookDish(dishId) {
+  try {
+    const data = await requestJson(`/api/dishes/${dishId}/cook`, { method: 'POST' });
+    renderSuggestions(data.suggestions);
+    renderDishes(data.dishes);
+  } catch (error) {
+    if (error.status === 401) {
+      await resetSession('Сесията изтече. Влез отново с Google.', 'error');
+      return;
+    }
+
+    setMessage(error.message, 'error');
+  }
 }
 
 function renderDishes(dishes) {
@@ -226,18 +244,7 @@ function renderDishes(dishes) {
       fragment.querySelector('.count-pill').textContent = `Готвена ${dish.cookCount} пъти`;
       fragment.querySelector('.last-pill').textContent = `Последно: ${formatDate(dish.lastCookedAt)}`;
       fragment.querySelector('.cook-button').addEventListener('click', async () => {
-        try {
-          const data = await requestJson(`/api/dishes/${dish.id}/cook`, { method: 'POST' });
-          renderSuggestions(data.suggestions);
-          renderDishes(data.dishes);
-        } catch (error) {
-          if (error.status === 401) {
-            await resetSession('Сесията изтече. Влез отново с Google.', 'error');
-            return;
-          }
-
-          setMessage(error.message, 'error');
-        }
+        await cookDish(dish.id);
       });
       dishesContainer.appendChild(fragment);
     });
