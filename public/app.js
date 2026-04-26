@@ -60,7 +60,7 @@ async function requestJson(url, options = {}) {
   const payload = await response.json();
 
   if (!response.ok) {
-    const error = new Error(payload.error || 'Заявката не успя.');
+    const error = new Error(payload.error || 'Request failed.');
     error.status = response.status;
     throw error;
   }
@@ -70,10 +70,10 @@ async function requestJson(url, options = {}) {
 
 function formatDate(dateString) {
   if (!dateString) {
-    return 'Още не е готвена';
+    return 'Not cooked yet';
   }
 
-  return new Intl.DateTimeFormat('bg-BG', {
+  return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short'
   }).format(new Date(dateString));
@@ -101,12 +101,12 @@ function clearDishUi() {
 
 function renderGoogleButton() {
   if (!state.googleClientId) {
-    googleSigninContainer.innerHTML = '<p class="message error">Липсва GOOGLE_CLIENT_ID на сървъра.</p>';
+    googleSigninContainer.innerHTML = '<p class="message error">GOOGLE_CLIENT_ID is missing on the server.</p>';
     return;
   }
 
   if (!window.google || !window.google.accounts?.id) {
-    googleSigninContainer.innerHTML = '<p class="message">Зареждане на Google вход...</p>';
+    googleSigninContainer.innerHTML = '<p class="message">Loading Google sign-in...</p>';
     window.setTimeout(() => {
       if (!state.user) {
         renderAuthState();
@@ -129,7 +129,7 @@ function renderGoogleButton() {
     size: 'large',
     shape: 'pill',
     text: 'signin_with',
-    locale: 'bg'
+    locale: 'en'
   });
 }
 
@@ -145,7 +145,7 @@ function renderAuthState() {
   syncAuthPlacement();
 
   if (isAuthenticated) {
-    userNameElement.textContent = state.user.name || 'Google потребител';
+    userNameElement.textContent = state.user.name || 'Google user';
     userEmailElement.textContent = state.user.email || '';
 
     const fallbackAvatar = getFallbackAvatarDataUri(state.user.name || state.user.email || 'Google');
@@ -192,18 +192,18 @@ function renderSuggestions(suggestions) {
   suggestionsContainer.innerHTML = '';
 
   if (suggestions.length === 0) {
-    suggestionsContainer.innerHTML = '<div class="empty-state">Добави рецепти, за да видиш предложения.</div>';
+    suggestionsContainer.innerHTML = '<div class="empty-state">Add recipes to see suggestions.</div>';
     return;
   }
 
-  const labels = ['1. Най-отдавна готвена', '2. Най-рядко готвена'];
+  const labels = ['1. Longest since last cooked', '2. Least frequently cooked'];
 
   suggestions.forEach((dish, index) => {
     const fragment = suggestionTemplate.content.cloneNode(true);
-    fragment.querySelector('.suggestion-label').textContent = labels[index] || 'Предложение';
+    fragment.querySelector('.suggestion-label').textContent = labels[index] || 'Suggestion';
     fragment.querySelector('.suggestion-name').textContent = dish.name;
     fragment.querySelector('.suggestion-meta').textContent =
-      `${dish.cookCount} готвения • Последно: ${formatDate(dish.lastCookedAt)}`;
+      `${dish.cookCount} times cooked • Last: ${formatDate(dish.lastCookedAt)}`;
     fragment.querySelector('.cook-button').addEventListener('click', async () => {
       await cookDish(dish.id);
     });
@@ -218,7 +218,7 @@ async function cookDish(dishId) {
     renderDishes(data.dishes);
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Сесията изтече. Влез отново с Google.', 'error');
+      await resetSession('Your session expired. Please sign in with Google again.', 'error');
       return;
     }
 
@@ -230,19 +230,19 @@ function renderDishes(dishes) {
   dishesContainer.innerHTML = '';
 
   if (dishes.length === 0) {
-    dishesContainer.innerHTML = '<div class="empty-state">Списъкът е празен. Добави първата манджа.</div>';
+    dishesContainer.innerHTML = '<div class="empty-state">The list is empty. Add your first recipe.</div>';
     return;
   }
 
   dishes
     .slice()
-    .sort((left, right) => left.name.localeCompare(right.name, 'bg'))
+    .sort((left, right) => left.name.localeCompare(right.name, 'en'))
     .forEach(dish => {
       const fragment = dishTemplate.content.cloneNode(true);
       fragment.querySelector('.dish-name').textContent = dish.name;
-      fragment.querySelector('.dish-notes').textContent = dish.notes || 'Няма бележки.';
-      fragment.querySelector('.count-pill').textContent = `Готвена ${dish.cookCount} пъти`;
-      fragment.querySelector('.last-pill').textContent = `Последно: ${formatDate(dish.lastCookedAt)}`;
+      fragment.querySelector('.dish-notes').textContent = dish.notes || 'No notes.';
+      fragment.querySelector('.count-pill').textContent = `Cooked ${dish.cookCount} times`;
+      fragment.querySelector('.last-pill').textContent = `Last: ${formatDate(dish.lastCookedAt)}`;
       fragment.querySelector('.cook-button').addEventListener('click', async () => {
         await cookDish(dish.id);
       });
@@ -257,7 +257,7 @@ async function loadData() {
     renderDishes(data.dishes);
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Сесията изтече. Влез отново с Google.', 'error');
+      await resetSession('Your session expired. Please sign in with Google again.', 'error');
       return;
     }
 
@@ -299,11 +299,11 @@ form.addEventListener('submit', async event => {
     form.reset();
     renderSuggestions(data.suggestions);
     renderDishes(data.dishes);
-    setMessage('Манджата е добавена.', 'success');
+    setMessage('Recipe added.', 'success');
     nameInput.focus();
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Сесията изтече. Влез отново с Google.', 'error');
+      await resetSession('Your session expired. Please sign in with Google again.', 'error');
       return;
     }
 
@@ -314,10 +314,10 @@ form.addEventListener('submit', async event => {
 refreshButton.addEventListener('click', async () => {
   try {
     await loadData();
-    setMessage('Данните са обновени.', 'success');
+    setMessage('Data refreshed.', 'success');
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Сесията изтече. Влез отново с Google.', 'error');
+      await resetSession('Your session expired. Please sign in with Google again.', 'error');
       return;
     }
 
@@ -331,7 +331,7 @@ logoutButton.addEventListener('click', async () => {
     if (window.google?.accounts?.id) {
       window.google.accounts.id.disableAutoSelect();
     }
-    await resetSession('Излезе успешно.', 'success');
+    await resetSession('Logged out successfully.', 'success');
   } catch (error) {
     setAuthMessage(error.message, 'error');
   }

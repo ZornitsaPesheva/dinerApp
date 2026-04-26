@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="bg">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>КоШиЯм</title>
+    <title>Cook Planner</title>
     <meta property="og:image" content="/dinners.png" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" href="/styles.css" />
@@ -11,12 +11,12 @@
   <body>
     <main class="page-shell">
       <section class="hero">
-        <p class="eyebrow">План за готвене</p>
-        <h1>Какво да сготвим днес?</h1>
+        <p class="eyebrow">Cooking Plan</p>
+        <h1>What should we cook today?</h1>
         <div id="mobile-auth-slot" class="mobile-auth-slot" hidden></div>
         <!-- <p class="hero-copy">
-          Приложението пази списък с манджи, брои колко пъти са готвени и кога за последно,
-          после предлага най-отдавна готвената и най-рядко готвената.
+          The app keeps a list of recipes, tracks how many times each has been cooked and when,
+          then suggests the one cooked longest ago and the one cooked least often.
         </p> -->
       </section>
 
@@ -24,8 +24,8 @@
         <article class="card auth-card">
           <div class="card-header auth-header">
             <div id="auth-intro">
-              <h2>Google вход</h2>
-              <p class="auth-copy">Влез с Google и създай свой личен списък с любими рецепти..</p>
+              <h2>Google Sign-in</h2>
+              <p class="auth-copy">Sign in with Google to create your personal list of favorite recipes.</p>
             </div>
           </div>
 
@@ -35,7 +35,7 @@
               <p id="user-name" class="auth-user-name"></p>
               <p id="user-email" class="auth-user-email"></p>
             </div>
-            <button id="logout-button" class="ghost-btn" type="button" hidden>Изход</button>
+            <button id="logout-button" class="ghost-btn" type="button" hidden>Log out</button>
           </div>
 
           <div id="google-signin" class="google-signin"></div>
@@ -46,25 +46,25 @@
       <div id="app-shell" hidden>
         <section class="panel panel-grid">
           <article class="card add-card">
-            <h2>Добави нова рецепта</h2>
+            <h2>Add a New Recipe</h2>
             <form id="dish-form" class="stack">
               <label class="field">
-                <span>Име</span>
+                <span>Name</span>
                 <input id="dish-name" name="name" type="text" maxlength="80" required />
               </label>
               <label class="field">
-                <span>Oписание</span>
+                <span>Description</span>
                 <textarea id="dish-notes" name="notes" rows="3" maxlength="200"></textarea>
               </label>
-              <button type="submit" class="primary-btn">Запиши</button>
+              <button type="submit" class="primary-btn">Save</button>
             </form>
             <p id="form-message" class="message" aria-live="polite"></p>
           </article>
 
           <article class="card suggestions-card">
             <div class="card-header">
-              <h2>Предложения за готвене</h2>
-              <button id="refresh-button" class="ghost-btn" type="button">Обнови</button>
+              <h2>Cooking Suggestions</h2>
+              <button id="refresh-button" class="ghost-btn" type="button">Refresh</button>
             </div>
             <div id="suggestions" class="suggestions-list"></div>
           </article>
@@ -72,8 +72,8 @@
 
         <section class="panel">
           <div class="card-header">
-            <h2>Всички рецепти</h2>
-            <p class="section-note">Натисни „Сготвих я“, за да се отбележи като сготвена.</p>
+            <h2>All Recipes</h2>
+            <p class="section-note">Click "Cooked it" to mark the recipe as cooked.</p>
           </div>
           <div id="dishes" class="dish-list"></div>
         </section>
@@ -88,7 +88,7 @@
             <h3 class="suggestion-name"></h3>
             <p class="suggestion-meta"></p>
           </div>
-          <button class="primary-btn cook-button" type="button">Сготвих я</button>
+          <button class="primary-btn cook-button" type="button">Cooked it</button>
         </div>
       </article>
     </template>
@@ -100,7 +100,7 @@
             <h3 class="dish-name"></h3>
             <p class="dish-notes"></p>
           </div>
-          <button class="primary-btn cook-button" type="button">Сготвих я</button>
+          <button class="primary-btn cook-button" type="button">Cooked it</button>
         </div>
         <div class="dish-meta-row">
           <span class="meta-pill count-pill"></span>

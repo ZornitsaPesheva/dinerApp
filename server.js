@@ -286,7 +286,7 @@ function requireAuthenticatedUser(request, response) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    sendJson(response, 401, { error: 'Трябва да влезеш с Google.' });
+    sendJson(response, 401, { error: 'You need to sign in with Google.' });
     return null;
   }
 
