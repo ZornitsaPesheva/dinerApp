@@ -411,7 +411,8 @@ function buildApiResponse(dishes) {
 }
 
 async function serveStaticFile(requestPath, response) {
-  const safePath = requestPath === '/' ? '/index.html' : requestPath;
+  const urlPathname = new URL(requestPath, 'http://localhost').pathname;
+  const safePath = urlPathname === '/' ? '/index.html' : urlPathname;
   const resolvedPath = path.normalize(path.join(PUBLIC_DIR, safePath));
 
   if (!resolvedPath.startsWith(PUBLIC_DIR)) {
@@ -427,7 +428,10 @@ async function serveStaticFile(requestPath, response) {
     response.writeHead(200, { 'Content-Type': contentType });
     response.end(fileContent);
   } catch {
-    sendJson(response, 404, { error: 'Not found' });
+    const indexPath = path.join(PUBLIC_DIR, 'index.html');
+    const indexContent = await fs.readFile(indexPath);
+    response.writeHead(200, { 'Content-Type': MIME_TYPES['.html'] });
+    response.end(indexContent);
   }
 }
 
