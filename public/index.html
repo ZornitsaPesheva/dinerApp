@@ -41,11 +41,19 @@
           </div>
 
           <div id="google-signin" class="google-signin"></div>
+          <div class="demo-entry">
+            <span class="demo-divider">or</span>
+            <button id="try-demo-button" class="ghost-btn" type="button">Try Now</button>
+          </div>
           <p id="auth-message" class="message" aria-live="polite"></p>
         </article>
       </section>
 
       <div id="app-shell" hidden>
+        <div id="demo-banner" class="demo-banner" hidden>
+          <span>Demo mode — recipes are saved in your browser and will be merged when you sign in.</span>
+          <button id="exit-demo-button" class="ghost-btn" type="button">Exit demo</button>
+        </div>
         <section class="panel panel-grid">
           <article class="card add-card">
             <h2>Add a New Recipe</h2>

@@ -279,6 +279,32 @@ button:hover {
   color: var(--success);
 }
 
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  border-radius: 20px;
+  background: rgba(193, 90, 43, 0.1);
+  border: 1px solid rgba(193, 90, 43, 0.22);
+  color: var(--accent-dark);
+  font-size: 0.9rem;
+}
+
+.demo-entry {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.demo-divider {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .empty-state {
   padding: 20px;
   border-radius: 18px;
@@ -312,5 +338,15 @@ button:hover {
 
   #logout-button {
     width: auto;
+  }
+
+  .demo-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .demo-entry {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

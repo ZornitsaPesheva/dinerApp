@@ -18,10 +18,69 @@ const userEmailElement = document.querySelector('#user-email');
 const logoutButton = document.querySelector('#logout-button');
 const authIntroElement = document.querySelector('#auth-intro');
 const authPanelElement = document.querySelector('.auth-panel');
+const demoBannerElement = document.querySelector('#demo-banner');
+const tryDemoButton = document.querySelector('#try-demo-button');
+const exitDemoButton = document.querySelector('#exit-demo-button');
+
+const DEMO_STORAGE_KEY = 'diner_demo_dishes';
+
+function getDemoDishes() {
+  try {
+    const raw = localStorage.getItem(DEMO_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDemoDishes(dishes) {
+  localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(dishes));
+}
+
+function clearDemoData() {
+  localStorage.removeItem(DEMO_STORAGE_KEY);
+}
+
+function localBuildApiResponse(dishes) {
+  const normalized = dishes.map(d => ({
+    id: d.id,
+    name: d.name,
+    notes: d.notes || '',
+    cookCount: d.cookCount || 0,
+    lastCookedAt: d.lastCookedAt || null,
+    cookHistory: Array.isArray(d.cookHistory) ? d.cookHistory : []
+  }));
+
+  const byOldest = [...normalized].sort((a, b) => {
+    const aNever = a.cookCount === 0 ? 0 : 1;
+    const bNever = b.cookCount === 0 ? 0 : 1;
+    if (aNever !== bNever) return aNever - bNever;
+    const aLast = a.lastCookedAt || '0000-00-00';
+    const bLast = b.lastCookedAt || '0000-00-00';
+    if (aLast !== bLast) return aLast.localeCompare(bLast);
+    if (a.cookCount !== b.cookCount) return a.cookCount - b.cookCount;
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+  });
+
+  const byRarest = [...normalized].sort((a, b) => {
+    if (a.cookCount !== b.cookCount) return a.cookCount - b.cookCount;
+    const aLast = a.lastCookedAt || '0000-00-00';
+    const bLast = b.lastCookedAt || '0000-00-00';
+    if (aLast !== bLast) return aLast.localeCompare(bLast);
+    return a.name.localeCompare(b.name);
+  });
+
+  const oldest = byOldest[0];
+  const rarest = byRarest.find(d => !oldest || d.id !== oldest.id);
+  return { dishes: normalized, suggestions: [oldest, rarest].filter(Boolean) };
+}
 
 const state = {
   googleClientId: '',
-  user: null
+  user: null,
+  demoMode: false
 };
 
 let googleButtonInitialized = false;
@@ -212,6 +271,22 @@ function renderSuggestions(suggestions) {
 }
 
 async function cookDish(dishId) {
+  if (state.demoMode) {
+    const dishes = getDemoDishes();
+    const dish = dishes.find(d => d.id === dishId);
+    if (!dish) return;
+    const cookedAt = new Date().toISOString();
+    if (!Array.isArray(dish.cookHistory)) dish.cookHistory = [];
+    dish.cookHistory.push(cookedAt);
+    dish.cookCount = dish.cookHistory.length;
+    dish.lastCookedAt = cookedAt;
+    saveDemoDishes(dishes);
+    const result = localBuildApiResponse(dishes);
+    renderSuggestions(result.suggestions);
+    renderDishes(result.dishes);
+    return;
+  }
+
   try {
     const data = await requestJson(`/api/dishes/${dishId}/cook`, { method: 'POST' });
     renderSuggestions(data.suggestions);
@@ -251,6 +326,13 @@ function renderDishes(dishes) {
 }
 
 async function loadData() {
+  if (state.demoMode) {
+    const result = localBuildApiResponse(getDemoDishes());
+    renderSuggestions(result.suggestions);
+    renderDishes(result.dishes);
+    return;
+  }
+
   try {
     const data = await requestJson('/api/dishes');
     renderSuggestions(data.suggestions);
@@ -273,10 +355,25 @@ async function handleGoogleCredentialResponse(response) {
     });
     state.googleClientId = session.googleClientId || state.googleClientId;
     state.user = session.user;
+    state.demoMode = false;
+    demoBannerElement.hidden = true;
     renderAuthState();
     setAppVisibility(true);
-    await loadData();
-    setMessage('');
+
+    const demoDishes = getDemoDishes();
+    if (demoDishes.length > 0) {
+      const data = await requestJson('/api/dishes/merge', {
+        method: 'POST',
+        body: JSON.stringify({ dishes: demoDishes })
+      });
+      clearDemoData();
+      renderSuggestions(data.suggestions);
+      renderDishes(data.dishes);
+      setMessage(`${demoDishes.length} demo recipe(s) merged successfully.`, 'success');
+    } else {
+      await loadData();
+      setMessage('');
+    }
   } catch (error) {
     setAuthMessage(error.message, 'error');
   }
@@ -290,6 +387,32 @@ form.addEventListener('submit', async event => {
     name: nameInput.value,
     notes: notesInput.value
   };
+
+  if (state.demoMode) {
+    const name = payload.name.trim();
+    if (!name) return;
+    const dishes = getDemoDishes();
+    if (dishes.some(d => d.name.toLowerCase() === name.toLowerCase())) {
+      setMessage('Dish already exists', 'error');
+      return;
+    }
+    dishes.push({
+      id: crypto.randomUUID(),
+      name,
+      notes: payload.notes.trim(),
+      cookCount: 0,
+      cookHistory: [],
+      lastCookedAt: null
+    });
+    saveDemoDishes(dishes);
+    form.reset();
+    const result = localBuildApiResponse(dishes);
+    renderSuggestions(result.suggestions);
+    renderDishes(result.dishes);
+    setMessage('Recipe added.', 'success');
+    nameInput.focus();
+    return;
+  }
 
   try {
     const data = await requestJson('/api/dishes', {
@@ -350,6 +473,15 @@ async function initializeApp() {
       return;
     }
 
+    // Restore demo mode automatically if there are saved demo dishes
+    if (getDemoDishes().length > 0) {
+      state.demoMode = true;
+      demoBannerElement.hidden = false;
+      setAppVisibility(true);
+      await loadData();
+      return;
+    }
+
     setAppVisibility(false);
   } catch (error) {
     setAppVisibility(false);
@@ -357,6 +489,21 @@ async function initializeApp() {
     setAuthMessage(error.message, 'error');
   }
 }
+
+tryDemoButton.addEventListener('click', async () => {
+  state.demoMode = true;
+  demoBannerElement.hidden = false;
+  setAppVisibility(true);
+  await loadData();
+});
+
+exitDemoButton.addEventListener('click', () => {
+  clearDemoData();
+  state.demoMode = false;
+  demoBannerElement.hidden = true;
+  setAppVisibility(false);
+  clearDishUi();
+});
 
 initializeApp();
 bindViewportListener();

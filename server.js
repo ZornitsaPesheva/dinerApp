@@ -538,6 +538,39 @@ async function handleApi(request, response) {
     return;
   }
 
+  if (request.method === 'POST' && url.pathname === '/api/dishes/merge') {
+    const payload = await readRequestBody(request);
+    const demoDishes = Array.isArray(payload.dishes) ? payload.dishes : [];
+    const dishes = await readDishes(user.sub);
+
+    for (const demoDish of demoDishes) {
+      const name = typeof demoDish.name === 'string' ? demoDish.name.trim() : '';
+      if (!name) continue;
+
+      const demoHistory = Array.isArray(demoDish.cookHistory) ? [...demoDish.cookHistory] : [];
+      const existing = dishes.find(d => d.name.toLowerCase() === name.toLowerCase());
+
+      if (existing) {
+        const existingHistory = Array.isArray(existing.cookHistory) ? existing.cookHistory : [];
+        existing.cookHistory = [...existingHistory, ...demoHistory].sort();
+        existing.cookCount = existing.cookHistory.length;
+      } else {
+        const sortedHistory = demoHistory.sort();
+        dishes.push({
+          id: randomUUID(),
+          name,
+          notes: typeof demoDish.notes === 'string' ? demoDish.notes.trim() : '',
+          cookCount: sortedHistory.length,
+          cookHistory: sortedHistory
+        });
+      }
+    }
+
+    await writeDishes(user.sub, dishes);
+    sendJson(response, 200, buildApiResponse(dishes));
+    return;
+  }
+
   sendJson(response, 404, { error: 'API route not found' });
 }
 
