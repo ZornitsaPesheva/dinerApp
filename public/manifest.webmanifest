@@ -1,0 +1,23 @@
+{
+  "name": "Cook Planner",
+  "short_name": "CookPlan",
+  "description": "Keep a list of recipes, track how often each has been cooked, and get suggestions for what to cook today.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f2e8",
+  "theme_color": "#c15a2b",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/dinners.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
