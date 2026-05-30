@@ -519,6 +519,7 @@ async function handleApi(request, response) {
   }
 
   const cookMatch = url.pathname.match(/^\/api\/dishes\/([^/]+)\/cook$/);
+  const dishMatch = url.pathname.match(/^\/api\/dishes\/([^/]+)$/);
 
   if (request.method === 'POST' && cookMatch) {
     const dishId = cookMatch[1];
@@ -538,6 +539,21 @@ async function handleApi(request, response) {
 
     await writeDishes(user.sub, dishes);
     sendJson(response, 200, buildApiResponse(dishes));
+    return;
+  }
+
+  if (request.method === 'DELETE' && dishMatch) {
+    const dishId = dishMatch[1];
+    const dishes = await readDishes(user.sub);
+    const remainingDishes = dishes.filter(dish => dish.id !== dishId);
+
+    if (remainingDishes.length === dishes.length) {
+      sendJson(response, 404, { error: 'Dish not found' });
+      return;
+    }
+
+    await writeDishes(user.sub, remainingDishes);
+    sendJson(response, 200, buildApiResponse(remainingDishes));
     return;
   }
 

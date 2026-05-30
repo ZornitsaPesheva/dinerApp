@@ -116,7 +116,10 @@
             <h3 class="dish-name"></h3>
             <p class="dish-notes"></p>
           </div>
-          <button class="primary-btn cook-button" type="button">Cooked it</button>
+          <div class="dish-actions">
+            <button class="primary-btn cook-button" type="button">Cooked it</button>
+            <button class="danger-btn delete-button" type="button">Delete</button>
+          </div>
         </div>
         <div class="dish-meta-row">
           <span class="meta-pill count-pill"></span>
@@ -124,6 +127,24 @@
         </div>
       </article>
     </template>
+
+    <div id="delete-confirm-modal" class="modal-backdrop" hidden>
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-confirm-title"
+        aria-describedby="delete-confirm-message"
+      >
+        <h2 id="delete-confirm-title">Delete Confirmation</h2>
+        <p id="delete-confirm-message" class="modal-copy">Are you sure you want to delete it?</p>
+        <p id="delete-confirm-name" class="modal-highlight"></p>
+        <div class="modal-actions">
+          <button id="delete-cancel-button" class="ghost-btn" type="button">Cancel</button>
+          <button id="delete-confirm-button" class="danger-btn" type="button">Confirm</button>
+        </div>
+      </div>
+    </div>
 
     <footer class="site-footer">Created by pesheva@gmail.com</footer>
 

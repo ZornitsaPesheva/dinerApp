@@ -21,6 +21,10 @@ const authPanelElement = document.querySelector('.auth-panel');
 const demoBannerElement = document.querySelector('#demo-banner');
 const tryDemoButton = document.querySelector('#try-demo-button');
 const exitDemoButton = document.querySelector('#exit-demo-button');
+const deleteConfirmModalElement = document.querySelector('#delete-confirm-modal');
+const deleteConfirmNameElement = document.querySelector('#delete-confirm-name');
+const deleteCancelButton = document.querySelector('#delete-cancel-button');
+const deleteConfirmButton = document.querySelector('#delete-confirm-button');
 
 const DEMO_STORAGE_KEY = 'diner_demo_dishes';
 
@@ -80,7 +84,9 @@ function localBuildApiResponse(dishes) {
 const state = {
   googleClientId: '',
   user: null,
-  demoMode: false
+  demoMode: false,
+  pendingDeleteDish: null,
+  pendingDeleteTrigger: null
 };
 
 let googleButtonInitialized = false;
@@ -156,6 +162,27 @@ function clearDishUi() {
   suggestionsContainer.innerHTML = '';
   dishesContainer.innerHTML = '';
   setMessage('');
+}
+
+function openDeleteConfirmModal(dish, triggerButton) {
+  state.pendingDeleteDish = dish;
+  state.pendingDeleteTrigger = triggerButton;
+  deleteConfirmNameElement.textContent = dish.name;
+  deleteConfirmModalElement.hidden = false;
+  document.body.classList.add('modal-open');
+  deleteConfirmButton.focus();
+}
+
+function closeDeleteConfirmModal() {
+  deleteConfirmModalElement.hidden = true;
+  document.body.classList.remove('modal-open');
+
+  if (state.pendingDeleteTrigger instanceof HTMLElement) {
+    state.pendingDeleteTrigger.focus();
+  }
+
+  state.pendingDeleteDish = null;
+  state.pendingDeleteTrigger = null;
 }
 
 function renderGoogleButton() {
@@ -301,6 +328,39 @@ async function cookDish(dishId) {
   }
 }
 
+async function deleteDish(dishId) {
+  if (state.demoMode) {
+    const dishes = getDemoDishes();
+    const remainingDishes = dishes.filter(dish => dish.id !== dishId);
+
+    if (remainingDishes.length === dishes.length) {
+      setMessage('Dish not found.', 'error');
+      return;
+    }
+
+    saveDemoDishes(remainingDishes);
+    const result = localBuildApiResponse(remainingDishes);
+    renderSuggestions(result.suggestions);
+    renderDishes(result.dishes);
+    setMessage('Recipe deleted.', 'success');
+    return;
+  }
+
+  try {
+    const data = await requestJson(`/api/dishes/${dishId}`, { method: 'DELETE' });
+    renderSuggestions(data.suggestions);
+    renderDishes(data.dishes);
+    setMessage('Recipe deleted.', 'success');
+  } catch (error) {
+    if (error.status === 401) {
+      await resetSession('Your session expired. Please sign in with Google again.', 'error');
+      return;
+    }
+
+    setMessage(error.message, 'error');
+  }
+}
+
 function renderDishes(dishes) {
   dishesContainer.innerHTML = '';
 
@@ -320,6 +380,9 @@ function renderDishes(dishes) {
       fragment.querySelector('.last-pill').textContent = `Last: ${formatDate(dish.lastCookedAt)}`;
       fragment.querySelector('.cook-button').addEventListener('click', async () => {
         await cookDish(dish.id);
+      });
+      fragment.querySelector('.delete-button').addEventListener('click', event => {
+        openDeleteConfirmModal(dish, event.currentTarget);
       });
       dishesContainer.appendChild(fragment);
     });
@@ -503,6 +566,34 @@ exitDemoButton.addEventListener('click', () => {
   demoBannerElement.hidden = true;
   setAppVisibility(false);
   clearDishUi();
+});
+
+deleteCancelButton.addEventListener('click', () => {
+  closeDeleteConfirmModal();
+});
+
+deleteConfirmButton.addEventListener('click', async () => {
+  const dish = state.pendingDeleteDish;
+
+  if (!dish) {
+    closeDeleteConfirmModal();
+    return;
+  }
+
+  closeDeleteConfirmModal();
+  await deleteDish(dish.id);
+});
+
+deleteConfirmModalElement.addEventListener('click', event => {
+  if (event.target === deleteConfirmModalElement) {
+    closeDeleteConfirmModal();
+  }
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !deleteConfirmModalElement.hidden) {
+    closeDeleteConfirmModal();
+  }
 });
 
 function registerServiceWorker() {

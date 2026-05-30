@@ -203,6 +203,18 @@ button:hover {
   box-shadow: 0 10px 28px rgba(143, 63, 30, 0.25);
 }
 
+.danger-btn {
+  border-radius: 999px;
+  padding: 12px 18px;
+  color: #9f2d2d;
+  background: rgba(159, 45, 45, 0.08);
+  border: 1px solid rgba(159, 45, 45, 0.22);
+}
+
+.danger-btn:hover {
+  background: rgba(159, 45, 45, 0.14);
+}
+
 .ghost-btn {
   color: var(--accent-dark);
   background: var(--accent-soft);
@@ -246,6 +258,13 @@ button:hover {
 .dish-name,
 .suggestion-name {
   margin-bottom: 8px;
+}
+
+.dish-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .dish-notes {
@@ -305,6 +324,47 @@ button:hover {
   font-size: 0.9rem;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(47, 36, 27, 0.48);
+  backdrop-filter: blur(6px);
+  z-index: 20;
+}
+
+.modal-card {
+  width: min(100%, 420px);
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(93, 69, 45, 0.14);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+}
+
+.modal-copy {
+  margin-bottom: 8px;
+}
+
+.modal-highlight {
+  margin-bottom: 20px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
 .empty-state {
   padding: 20px;
   border-radius: 18px;
@@ -331,6 +391,7 @@ button:hover {
   }
 
   .cook-button,
+  .delete-button,
   .ghost-btn,
   .primary-btn {
     width: 100%;
@@ -348,5 +409,9 @@ button:hover {
   .demo-entry {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .modal-actions {
+    width: 100%;
   }
 }
