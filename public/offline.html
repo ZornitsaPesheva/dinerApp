@@ -20,5 +20,36 @@
         </article>
       </section>
     </main>
+    <script>
+      (function () {
+        var preferredLanguages = Array.isArray(navigator.languages) && navigator.languages.length > 0
+          ? navigator.languages
+          : [navigator.language];
+        var language = String(preferredLanguages.find(Boolean) || 'en').toLowerCase().indexOf('bg') === 0 ? 'bg' : 'en';
+        var texts = {
+          en: {
+            title: 'Offline | Cook Planner',
+            eyebrow: 'Offline mode',
+            heading: 'No internet connection',
+            copy: 'Cook Planner can still open from cache, but live updates and sign-in require connection.',
+            button: 'Try again'
+          },
+          bg: {
+            title: 'Извън линия | Cook Planner',
+            eyebrow: 'Режим без връзка',
+            heading: 'Няма интернет връзка',
+            copy: 'Cook Planner може да се отвори от кеша, но за живи обновявания и вход е нужна връзка.',
+            button: 'Опитай отново'
+          }
+        };
+        var text = texts[language];
+        document.documentElement.lang = language;
+        document.title = text.title;
+        document.querySelector('.eyebrow').textContent = text.eyebrow;
+        document.querySelector('h1').textContent = text.heading;
+        document.querySelector('.section-note').textContent = text.copy;
+        document.querySelector('.primary-btn').textContent = text.button;
+      }());
+    </script>
   </body>
 </html>

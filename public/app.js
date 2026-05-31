@@ -26,7 +26,165 @@ const deleteConfirmNameElement = document.querySelector('#delete-confirm-name');
 const deleteCancelButton = document.querySelector('#delete-cancel-button');
 const deleteConfirmButton = document.querySelector('#delete-confirm-button');
 
+function detectLanguage() {
+  const preferredLanguages = Array.isArray(navigator.languages) && navigator.languages.length > 0
+    ? navigator.languages
+    : [navigator.language];
+  const preferredLanguage = (preferredLanguages.find(Boolean) || 'en').toLowerCase();
+  return preferredLanguage.startsWith('bg') ? 'bg' : 'en';
+}
+
+const language = detectLanguage();
+const locale = language === 'bg' ? 'bg-BG' : 'en-US';
+
+const texts = {
+  en: {
+    pageTitle: 'Cook Planner',
+    pageDescription: 'Keep a list of recipes, track how often each has been cooked, and get suggestions for what to cook today.',
+    eyebrow: 'Cooking Plan',
+    heroTitle: 'What should we cook today?',
+    authTitle: 'Google Sign-in',
+    authCopy: 'Sign in with Google to create your personal list of favorite recipes.',
+    logOut: 'Log out',
+    tryDemo: 'Try Now',
+    demoBanner: 'Demo mode - recipes are saved in your browser and will be merged when you sign in.',
+    exitDemo: 'Exit demo',
+    addRecipeTitle: 'Add a New Recipe',
+    nameLabel: 'Name',
+    descriptionLabel: 'Description',
+    save: 'Save',
+    suggestionsTitle: 'Cooking Suggestions',
+    refresh: 'Refresh',
+    allRecipesTitle: 'All Recipes',
+    sectionNote: 'Click "Cooked it" to mark the recipe as cooked.',
+    cookedIt: 'Cooked it',
+    delete: 'Delete',
+    deleteTitle: 'Delete Confirmation',
+    deleteMessage: 'Are you sure you want to delete it?',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    footer: 'Created by pesheva@gmail.com',
+    loadingGoogleSignIn: 'Loading Google sign-in...',
+    googleMissing: 'GOOGLE_CLIENT_ID is missing on the server.',
+    googleUserFallback: 'Google user',
+    suggestionLongest: '1. Longest since last cooked',
+    suggestionLeast: '2. Least frequently cooked',
+    suggestionFallback: 'Suggestion',
+    addRecipesToSeeSuggestions: 'Add recipes to see suggestions.',
+    emptyList: 'The list is empty. Add your first recipe.',
+    noNotes: 'No notes.',
+    notCookedYet: 'Not cooked yet',
+    cookedTimes: ({ count }) => `${count} times cooked`,
+    lastCooked: ({ date }) => `Last: ${date}`,
+    recipeDeleted: 'Recipe deleted.',
+    recipeAdded: 'Recipe added.',
+    dataRefreshed: 'Data refreshed.',
+    dishAlreadyExists: 'Recipe already exists.',
+    dishNotFound: 'Recipe not found.',
+    sessionExpired: 'Your session expired. Please sign in with Google again.',
+    loggedOutSuccessfully: 'Logged out successfully.',
+    demoRecipesMerged: ({ count }) => `${count} demo recipe(s) merged successfully.`
+  },
+  bg: {
+    pageTitle: 'План за готвене',
+    pageDescription: 'Поддържайте списък с рецепти, следете колко често са готвени и получавайте предложения какво да сготвите днес.',
+    eyebrow: 'План за готвене',
+    heroTitle: 'Какво да сготвим днес?',
+    authTitle: 'Вход с Google',
+    authCopy: 'Влезте с Google, за да създадете личен списък с любими рецепти.',
+    logOut: 'Изход',
+    tryDemo: 'Изпробвай',
+    demoBanner: 'Демо режим - рецептите се запазват в браузъра и ще бъдат обединени, когато влезете.',
+    exitDemo: 'Изход от демо',
+    addRecipeTitle: 'Добави нова рецепта',
+    nameLabel: 'Име',
+    descriptionLabel: 'Описание',
+    save: 'Запази',
+    suggestionsTitle: 'Предложения за готвене',
+    refresh: 'Обнови',
+    allRecipesTitle: 'Всички рецепти',
+    sectionNote: 'Натиснете "Сготвих го", за да отбележите рецептата като приготвена.',
+    cookedIt: 'Сготвих го',
+    delete: 'Изтрий',
+    deleteTitle: 'Потвърждение за изтриване',
+    deleteMessage: 'Сигурни ли сте, че искате да изтриете това?',
+    cancel: 'Отказ',
+    confirm: 'Потвърди',
+    footer: 'Създадено от pesheva@gmail.com',
+    loadingGoogleSignIn: 'Зареждане на входа с Google...',
+    googleMissing: 'GOOGLE_CLIENT_ID липсва на сървъра.',
+    googleUserFallback: 'Потребител от Google',
+    suggestionLongest: '1. Най-дълго от последно готвене',
+    suggestionLeast: '2. Най-рядко готвена',
+    suggestionFallback: 'Предложение',
+    addRecipesToSeeSuggestions: 'Добавете рецепти, за да видите предложения.',
+    emptyList: 'Списъкът е празен. Добавете първата си рецепта.',
+    noNotes: 'Няма описание.',
+    notCookedYet: 'Все още не е готвено',
+    cookedTimes: ({ count }) => `Готвено ${count} пъти`,
+    lastCooked: ({ date }) => `Последно: ${date}`,
+    recipeDeleted: 'Рецептата е изтрита.',
+    recipeAdded: 'Рецептата е добавена.',
+    dataRefreshed: 'Данните са обновени.',
+    dishAlreadyExists: 'Рецептата вече съществува.',
+    dishNotFound: 'Рецептата не е намерена.',
+    sessionExpired: 'Сесията ви изтече. Влезте отново с Google.',
+    loggedOutSuccessfully: 'Излязохте успешно.',
+    demoRecipesMerged: ({ count }) => `Успешно бяха обединени ${count} демо рецепти.`
+  }
+};
+
+function translate(key, params = {}) {
+  const value = texts[language]?.[key] ?? texts.en[key] ?? key;
+  if (typeof value === 'function') {
+    return value(params);
+  }
+
+  return value.replace(/\{(\w+)\}/g, (_, paramKey) => String(params[paramKey] ?? ''));
+}
+
+function applyLanguage() {
+  document.documentElement.lang = language;
+  document.title = translate('pageTitle');
+
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  const ogDescription = document.querySelector('meta[property="og:description"]');
+
+  if (ogTitle) {
+    ogTitle.content = translate('pageTitle');
+  }
+
+  if (ogDescription) {
+    ogDescription.content = translate('pageDescription');
+  }
+
+  document.querySelector('.eyebrow').textContent = translate('eyebrow');
+  document.querySelector('.hero h1').textContent = translate('heroTitle');
+  authIntroElement.querySelector('h2').textContent = translate('authTitle');
+  authIntroElement.querySelector('.auth-copy').textContent = translate('authCopy');
+  logoutButton.textContent = translate('logOut');
+  tryDemoButton.textContent = translate('tryDemo');
+  exitDemoButton.textContent = translate('exitDemo');
+  demoBannerElement.querySelector('span').textContent = translate('demoBanner');
+  document.querySelector('.add-card h2').textContent = translate('addRecipeTitle');
+  const fieldLabels = document.querySelectorAll('#dish-form .field span');
+  fieldLabels[0].textContent = translate('nameLabel');
+  fieldLabels[1].textContent = translate('descriptionLabel');
+  document.querySelector('.add-card .primary-btn').textContent = translate('save');
+  document.querySelector('.suggestions-card h2').textContent = translate('suggestionsTitle');
+  refreshButton.textContent = translate('refresh');
+  document.querySelector('.panel > .card-header h2').textContent = translate('allRecipesTitle');
+  document.querySelector('.section-note').textContent = translate('sectionNote');
+  deleteConfirmModalElement.querySelector('#delete-confirm-title').textContent = translate('deleteTitle');
+  deleteConfirmModalElement.querySelector('#delete-confirm-message').textContent = translate('deleteMessage');
+  deleteCancelButton.textContent = translate('cancel');
+  deleteConfirmButton.textContent = translate('confirm');
+  document.querySelector('.site-footer').textContent = translate('footer');
+}
+
 const DEMO_STORAGE_KEY = 'diner_demo_dishes';
+
+applyLanguage();
 
 function getDemoDishes() {
   try {
@@ -65,7 +223,7 @@ function localBuildApiResponse(dishes) {
     const bLast = b.lastCookedAt || '0000-00-00';
     if (aLast !== bLast) return aLast.localeCompare(bLast);
     if (a.cookCount !== b.cookCount) return a.cookCount - b.cookCount;
-    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase(), locale);
   });
 
   const byRarest = [...normalized].sort((a, b) => {
@@ -73,7 +231,7 @@ function localBuildApiResponse(dishes) {
     const aLast = a.lastCookedAt || '0000-00-00';
     const bLast = b.lastCookedAt || '0000-00-00';
     if (aLast !== bLast) return aLast.localeCompare(bLast);
-    return a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name, locale);
   });
 
   const oldest = byOldest[0];
@@ -135,10 +293,10 @@ async function requestJson(url, options = {}) {
 
 function formatDate(dateString) {
   if (!dateString) {
-    return 'Not cooked yet';
+    return translate('notCookedYet');
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short'
   }).format(new Date(dateString));
@@ -187,12 +345,12 @@ function closeDeleteConfirmModal() {
 
 function renderGoogleButton() {
   if (!state.googleClientId) {
-    googleSigninContainer.innerHTML = '<p class="message error">GOOGLE_CLIENT_ID is missing on the server.</p>';
+    googleSigninContainer.innerHTML = `<p class="message error">${translate('googleMissing')}</p>`;
     return;
   }
 
   if (!window.google || !window.google.accounts?.id) {
-    googleSigninContainer.innerHTML = '<p class="message">Loading Google sign-in...</p>';
+    googleSigninContainer.innerHTML = `<p class="message">${translate('loadingGoogleSignIn')}</p>`;
     window.setTimeout(() => {
       if (!state.user) {
         renderAuthState();
@@ -215,7 +373,7 @@ function renderGoogleButton() {
     size: 'large',
     shape: 'pill',
     text: 'signin_with',
-    locale: 'en'
+    locale
   });
 }
 
@@ -231,7 +389,7 @@ function renderAuthState() {
   syncAuthPlacement();
 
   if (isAuthenticated) {
-    userNameElement.textContent = state.user.name || 'Google user';
+    userNameElement.textContent = state.user.name || translate('googleUserFallback');
     userEmailElement.textContent = state.user.email || '';
 
     const fallbackAvatar = getFallbackAvatarDataUri(state.user.name || state.user.email || 'Google');
@@ -278,18 +436,19 @@ function renderSuggestions(suggestions) {
   suggestionsContainer.innerHTML = '';
 
   if (suggestions.length === 0) {
-    suggestionsContainer.innerHTML = '<div class="empty-state">Add recipes to see suggestions.</div>';
+    suggestionsContainer.innerHTML = `<div class="empty-state">${translate('addRecipesToSeeSuggestions')}</div>`;
     return;
   }
 
-  const labels = ['1. Longest since last cooked', '2. Least frequently cooked'];
+  const labels = [translate('suggestionLongest'), translate('suggestionLeast')];
 
   suggestions.forEach((dish, index) => {
     const fragment = suggestionTemplate.content.cloneNode(true);
-    fragment.querySelector('.suggestion-label').textContent = labels[index] || 'Suggestion';
+    fragment.querySelector('.suggestion-label').textContent = labels[index] || translate('suggestionFallback');
     fragment.querySelector('.suggestion-name').textContent = dish.name;
     fragment.querySelector('.suggestion-meta').textContent =
-      `${dish.cookCount} times cooked • Last: ${formatDate(dish.lastCookedAt)}`;
+      `${translate('cookedTimes', { count: dish.cookCount })} • ${translate('lastCooked', { date: formatDate(dish.lastCookedAt) })}`;
+    fragment.querySelector('.cook-button').textContent = translate('cookedIt');
     fragment.querySelector('.cook-button').addEventListener('click', async () => {
       await cookDish(dish.id);
     });
@@ -320,7 +479,7 @@ async function cookDish(dishId) {
     renderDishes(data.dishes);
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Your session expired. Please sign in with Google again.', 'error');
+      await resetSession(translate('sessionExpired'), 'error');
       return;
     }
 
@@ -334,7 +493,7 @@ async function deleteDish(dishId) {
     const remainingDishes = dishes.filter(dish => dish.id !== dishId);
 
     if (remainingDishes.length === dishes.length) {
-      setMessage('Dish not found.', 'error');
+      setMessage(translate('dishNotFound'), 'error');
       return;
     }
 
@@ -342,7 +501,7 @@ async function deleteDish(dishId) {
     const result = localBuildApiResponse(remainingDishes);
     renderSuggestions(result.suggestions);
     renderDishes(result.dishes);
-    setMessage('Recipe deleted.', 'success');
+    setMessage(translate('recipeDeleted'), 'success');
     return;
   }
 
@@ -350,10 +509,10 @@ async function deleteDish(dishId) {
     const data = await requestJson(`/api/dishes/${dishId}`, { method: 'DELETE' });
     renderSuggestions(data.suggestions);
     renderDishes(data.dishes);
-    setMessage('Recipe deleted.', 'success');
+    setMessage(translate('recipeDeleted'), 'success');
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Your session expired. Please sign in with Google again.', 'error');
+      await resetSession(translate('sessionExpired'), 'error');
       return;
     }
 
@@ -365,19 +524,21 @@ function renderDishes(dishes) {
   dishesContainer.innerHTML = '';
 
   if (dishes.length === 0) {
-    dishesContainer.innerHTML = '<div class="empty-state">The list is empty. Add your first recipe.</div>';
+    dishesContainer.innerHTML = `<div class="empty-state">${translate('emptyList')}</div>`;
     return;
   }
 
   dishes
     .slice()
-    .sort((left, right) => left.name.localeCompare(right.name, 'en'))
+    .sort((left, right) => left.name.localeCompare(right.name, locale))
     .forEach(dish => {
       const fragment = dishTemplate.content.cloneNode(true);
       fragment.querySelector('.dish-name').textContent = dish.name;
-      fragment.querySelector('.dish-notes').textContent = dish.notes || 'No notes.';
-      fragment.querySelector('.count-pill').textContent = `Cooked ${dish.cookCount} times`;
-      fragment.querySelector('.last-pill').textContent = `Last: ${formatDate(dish.lastCookedAt)}`;
+      fragment.querySelector('.dish-notes').textContent = dish.notes || translate('noNotes');
+      fragment.querySelector('.count-pill').textContent = translate('cookedTimes', { count: dish.cookCount });
+      fragment.querySelector('.last-pill').textContent = translate('lastCooked', { date: formatDate(dish.lastCookedAt) });
+      fragment.querySelector('.cook-button').textContent = translate('cookedIt');
+      fragment.querySelector('.delete-button').textContent = translate('delete');
       fragment.querySelector('.cook-button').addEventListener('click', async () => {
         await cookDish(dish.id);
       });
@@ -402,7 +563,7 @@ async function loadData() {
     renderDishes(data.dishes);
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Your session expired. Please sign in with Google again.', 'error');
+      await resetSession(translate('sessionExpired'), 'error');
       return;
     }
 
@@ -432,7 +593,7 @@ async function handleGoogleCredentialResponse(response) {
       clearDemoData();
       renderSuggestions(data.suggestions);
       renderDishes(data.dishes);
-      setMessage(`${demoDishes.length} demo recipe(s) merged successfully.`, 'success');
+      setMessage(translate('demoRecipesMerged', { count: demoDishes.length }), 'success');
     } else {
       await loadData();
       setMessage('');
@@ -456,7 +617,7 @@ form.addEventListener('submit', async event => {
     if (!name) return;
     const dishes = getDemoDishes();
     if (dishes.some(d => d.name.toLowerCase() === name.toLowerCase())) {
-      setMessage('Dish already exists', 'error');
+      setMessage(translate('dishAlreadyExists'), 'error');
       return;
     }
     dishes.push({
@@ -472,7 +633,7 @@ form.addEventListener('submit', async event => {
     const result = localBuildApiResponse(dishes);
     renderSuggestions(result.suggestions);
     renderDishes(result.dishes);
-    setMessage('Recipe added.', 'success');
+    setMessage(translate('recipeAdded'), 'success');
     nameInput.focus();
     return;
   }
@@ -485,11 +646,11 @@ form.addEventListener('submit', async event => {
     form.reset();
     renderSuggestions(data.suggestions);
     renderDishes(data.dishes);
-    setMessage('Recipe added.', 'success');
+    setMessage(translate('recipeAdded'), 'success');
     nameInput.focus();
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Your session expired. Please sign in with Google again.', 'error');
+      await resetSession(translate('sessionExpired'), 'error');
       return;
     }
 
@@ -500,10 +661,10 @@ form.addEventListener('submit', async event => {
 refreshButton.addEventListener('click', async () => {
   try {
     await loadData();
-    setMessage('Data refreshed.', 'success');
+    setMessage(translate('dataRefreshed'), 'success');
   } catch (error) {
     if (error.status === 401) {
-      await resetSession('Your session expired. Please sign in with Google again.', 'error');
+      await resetSession(translate('sessionExpired'), 'error');
       return;
     }
 
@@ -517,7 +678,7 @@ logoutButton.addEventListener('click', async () => {
     if (window.google?.accounts?.id) {
       window.google.accounts.id.disableAutoSelect();
     }
-    await resetSession('Logged out successfully.', 'success');
+    await resetSession(translate('loggedOutSuccessfully'), 'success');
   } catch (error) {
     setAuthMessage(error.message, 'error');
   }
