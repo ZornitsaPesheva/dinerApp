@@ -2,6 +2,7 @@ const form = document.querySelector('#dish-form');
 const nameInput = document.querySelector('#dish-name');
 const notesInput = document.querySelector('#dish-notes');
 const messageElement = document.querySelector('#form-message');
+const editCancelButton = document.querySelector('#edit-cancel-button');
 const dishesContainer = document.querySelector('#dishes');
 const suggestionsContainer = document.querySelector('#suggestions');
 const refreshButton = document.querySelector('#refresh-button');
@@ -50,9 +51,13 @@ const texts = {
     demoBanner: 'Demo mode - recipes are saved in your browser and will be merged when you sign in.',
     exitDemo: 'Exit demo',
     addRecipeTitle: 'Add a New Recipe',
+    editRecipeTitle: 'Edit Recipe',
     nameLabel: 'Name',
     descriptionLabel: 'Description',
     save: 'Save',
+    edit: 'Edit',
+    update: 'Update',
+    cancelEdit: 'Cancel edit',
     suggestionsTitle: 'Cooking Suggestions',
     refresh: 'Refresh',
     allRecipesTitle: 'All Recipes',
@@ -78,6 +83,7 @@ const texts = {
     lastCooked: ({ date }) => `Last: ${date}`,
     recipeDeleted: 'Recipe deleted.',
     recipeAdded: 'Recipe added.',
+    recipeUpdated: 'Recipe updated.',
     dataRefreshed: 'Data refreshed.',
     dishAlreadyExists: 'Recipe already exists.',
     dishNotFound: 'Recipe not found.',
@@ -97,9 +103,13 @@ const texts = {
     demoBanner: 'Демо режим - рецептите се запазват в браузъра и ще бъдат обединени, когато влезете.',
     exitDemo: 'Изход от демо',
     addRecipeTitle: 'Добави нова рецепта',
+    editRecipeTitle: 'Редактирай рецепта',
     nameLabel: 'Име',
     descriptionLabel: 'Описание',
     save: 'Запази',
+    edit: 'Редактирай',
+    update: 'Обнови',
+    cancelEdit: 'Отказ от редакция',
     suggestionsTitle: 'Предложения за готвене',
     refresh: 'Обнови',
     allRecipesTitle: 'Всички рецепти',
@@ -125,6 +135,7 @@ const texts = {
     lastCooked: ({ date }) => `Последно: ${date}`,
     recipeDeleted: 'Рецептата е изтрита.',
     recipeAdded: 'Рецептата е добавена.',
+    recipeUpdated: 'Рецептата е обновена.',
     dataRefreshed: 'Данните са обновени.',
     dishAlreadyExists: 'Рецептата вече съществува.',
     dishNotFound: 'Рецептата не е намерена.',
@@ -171,6 +182,7 @@ function applyLanguage() {
   fieldLabels[0].textContent = translate('nameLabel');
   fieldLabels[1].textContent = translate('descriptionLabel');
   document.querySelector('.add-card .primary-btn').textContent = translate('save');
+  editCancelButton.textContent = translate('cancelEdit');
   document.querySelector('.suggestions-card h2').textContent = translate('suggestionsTitle');
   refreshButton.textContent = translate('refresh');
   document.querySelector('.panel > .card-header h2').textContent = translate('allRecipesTitle');
@@ -243,6 +255,8 @@ const state = {
   googleClientId: '',
   user: null,
   demoMode: false,
+  editingDishId: null,
+  focusDishId: null,
   pendingDeleteDish: null,
   pendingDeleteTrigger: null
 };
@@ -314,6 +328,43 @@ function setAuthMessage(text, type = '') {
 
 function setAppVisibility(isVisible) {
   appShell.hidden = !isVisible;
+}
+
+function setFormToCreateMode() {
+  document.querySelector('.add-card h2').textContent = translate('addRecipeTitle');
+  form.querySelector('.primary-btn').textContent = translate('save');
+  editCancelButton.hidden = true;
+  form.dataset.mode = 'create';
+}
+
+function clearEditMode() {
+  state.editingDishId = null;
+  setFormToCreateMode();
+}
+
+function enterEditMode(dish) {
+  state.editingDishId = dish.id;
+  document.querySelector('.add-card h2').textContent = translate('editRecipeTitle');
+  form.querySelector('.primary-btn').textContent = translate('update');
+  editCancelButton.hidden = false;
+  form.dataset.mode = 'edit';
+  nameInput.value = dish.name;
+  notesInput.value = dish.notes || '';
+  setMessage('');
+  nameInput.focus();
+  nameInput.select();
+}
+
+function syncFormMode() {
+  if (state.editingDishId) {
+    document.querySelector('.add-card h2').textContent = translate('editRecipeTitle');
+    form.querySelector('.primary-btn').textContent = translate('update');
+    editCancelButton.hidden = false;
+    form.dataset.mode = 'edit';
+    return;
+  }
+
+  setFormToCreateMode();
 }
 
 function clearDishUi() {
@@ -426,6 +477,8 @@ function bindViewportListener() {
 
 async function resetSession(message = '', type = '') {
   state.user = null;
+  clearEditMode();
+  form.reset();
   setAppVisibility(false);
   clearDishUi();
   renderAuthState();
@@ -507,6 +560,10 @@ async function deleteDish(dishId) {
 
   try {
     const data = await requestJson(`/api/dishes/${dishId}`, { method: 'DELETE' });
+    if (state.editingDishId === dishId) {
+      form.reset();
+      clearEditMode();
+    }
     renderSuggestions(data.suggestions);
     renderDishes(data.dishes);
     setMessage(translate('recipeDeleted'), 'success');
@@ -521,6 +578,16 @@ async function deleteDish(dishId) {
 }
 
 function renderDishes(dishes) {
+  const focusDishId = state.focusDishId;
+  state.focusDishId = null;
+
+  if (state.editingDishId && !dishes.some(dish => dish.id === state.editingDishId)) {
+    clearEditMode();
+    form.reset();
+  } else {
+    syncFormMode();
+  }
+
   dishesContainer.innerHTML = '';
 
   if (dishes.length === 0) {
@@ -533,12 +600,18 @@ function renderDishes(dishes) {
     .sort((left, right) => left.name.localeCompare(right.name, locale))
     .forEach(dish => {
       const fragment = dishTemplate.content.cloneNode(true);
+      const dishCard = fragment.querySelector('.dish-item');
+      dishCard.tabIndex = -1;
       fragment.querySelector('.dish-name').textContent = dish.name;
       fragment.querySelector('.dish-notes').textContent = dish.notes || translate('noNotes');
       fragment.querySelector('.count-pill').textContent = translate('cookedTimes', { count: dish.cookCount });
       fragment.querySelector('.last-pill').textContent = translate('lastCooked', { date: formatDate(dish.lastCookedAt) });
+      fragment.querySelector('.edit-button').textContent = translate('edit');
       fragment.querySelector('.cook-button').textContent = translate('cookedIt');
       fragment.querySelector('.delete-button').textContent = translate('delete');
+      fragment.querySelector('.edit-button').addEventListener('click', () => {
+        enterEditMode(dish);
+      });
       fragment.querySelector('.cook-button').addEventListener('click', async () => {
         await cookDish(dish.id);
       });
@@ -546,6 +619,11 @@ function renderDishes(dishes) {
         openDeleteConfirmModal(dish, event.currentTarget);
       });
       dishesContainer.appendChild(fragment);
+
+      if (dish.id === focusDishId) {
+        dishCard.classList.add('update-ripple');
+        dishCard.focus();
+      }
     });
 }
 
@@ -611,19 +689,42 @@ form.addEventListener('submit', async event => {
     name: nameInput.value,
     notes: notesInput.value
   };
+  const name = payload.name.trim();
+  const notes = payload.notes.trim();
 
   if (state.demoMode) {
-    const name = payload.name.trim();
     if (!name) return;
     const dishes = getDemoDishes();
-    if (dishes.some(d => d.name.toLowerCase() === name.toLowerCase())) {
+    if (dishes.some(d => d.id !== state.editingDishId && d.name.toLowerCase() === name.toLowerCase())) {
       setMessage(translate('dishAlreadyExists'), 'error');
       return;
     }
+
+    if (state.editingDishId) {
+      const dish = dishes.find(item => item.id === state.editingDishId);
+
+      if (!dish) {
+        setMessage(translate('dishNotFound'), 'error');
+        return;
+      }
+
+      dish.name = name;
+      dish.notes = notes;
+      saveDemoDishes(dishes);
+      state.focusDishId = dish.id;
+      const updatedResult = localBuildApiResponse(dishes);
+      form.reset();
+      clearEditMode();
+      renderSuggestions(updatedResult.suggestions);
+      renderDishes(updatedResult.dishes);
+      setMessage(translate('recipeUpdated'), 'success');
+      return;
+    }
+
     dishes.push({
       id: crypto.randomUUID(),
       name,
-      notes: payload.notes.trim(),
+      notes,
       cookCount: 0,
       cookHistory: [],
       lastCookedAt: null
@@ -639,15 +740,23 @@ form.addEventListener('submit', async event => {
   }
 
   try {
-    const data = await requestJson('/api/dishes', {
-      method: 'POST',
-      body: JSON.stringify(payload)
+    const isEditing = Boolean(state.editingDishId);
+    if (isEditing) {
+      state.focusDishId = state.editingDishId;
+    }
+
+    const data = await requestJson(isEditing ? `/api/dishes/${state.editingDishId}` : '/api/dishes', {
+      method: isEditing ? 'PUT' : 'POST',
+      body: JSON.stringify({ name, notes })
     });
     form.reset();
+    clearEditMode();
     renderSuggestions(data.suggestions);
     renderDishes(data.dishes);
-    setMessage(translate('recipeAdded'), 'success');
-    nameInput.focus();
+    setMessage(translate(isEditing ? 'recipeUpdated' : 'recipeAdded'), 'success');
+    if (!isEditing) {
+      nameInput.focus();
+    }
   } catch (error) {
     if (error.status === 401) {
       await resetSession(translate('sessionExpired'), 'error');
@@ -721,12 +830,21 @@ tryDemoButton.addEventListener('click', async () => {
   await loadData();
 });
 
+editCancelButton.addEventListener('click', () => {
+  form.reset();
+  clearEditMode();
+  setMessage('');
+  nameInput.focus();
+});
+
 exitDemoButton.addEventListener('click', () => {
   clearDemoData();
   state.demoMode = false;
   demoBannerElement.hidden = true;
   setAppVisibility(false);
   clearDishUi();
+  clearEditMode();
+  form.reset();
 });
 
 deleteCancelButton.addEventListener('click', () => {

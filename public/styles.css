@@ -151,6 +151,12 @@ h1 {
   gap: 14px;
 }
 
+.form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -241,10 +247,51 @@ button:hover {
 
 .suggestion-item,
 .dish-item {
+  position: relative;
+  overflow: hidden;
   padding: 18px;
   border-radius: 20px;
   border: 1px solid rgba(93, 69, 45, 0.1);
   background: linear-gradient(180deg, rgba(255, 250, 242, 0.98), rgba(248, 239, 226, 0.88));
+}
+
+.dish-item:focus-visible {
+  outline: 3px solid rgba(193, 90, 43, 0.3);
+  outline-offset: 4px;
+}
+
+.dish-item.update-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 999px;
+  background: rgba(193, 90, 43, 0.18);
+  box-shadow: 0 0 0 0 rgba(193, 90, 43, 0.28);
+  transform: scale(0.25);
+  opacity: 0;
+  pointer-events: none;
+  animation: dish-update-ripple 720ms ease-out;
+}
+
+@keyframes dish-update-ripple {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.25);
+    box-shadow: 0 0 0 0 rgba(193, 90, 43, 0.28);
+  }
+
+  55% {
+    opacity: 0.35;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(12);
+    box-shadow: 0 0 0 24px rgba(193, 90, 43, 0);
+  }
 }
 
 .suggestion-label {

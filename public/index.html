@@ -72,7 +72,10 @@
                 <span>Description</span>
                 <textarea id="dish-notes" name="notes" rows="3" maxlength="200"></textarea>
               </label>
-              <button type="submit" class="primary-btn">Save</button>
+              <div class="form-actions">
+                <button type="submit" class="primary-btn">Save</button>
+                <button id="edit-cancel-button" class="ghost-btn" type="button" hidden>Cancel edit</button>
+              </div>
             </form>
             <p id="form-message" class="message" aria-live="polite"></p>
           </article>
@@ -117,6 +120,7 @@
             <p class="dish-notes"></p>
           </div>
           <div class="dish-actions">
+              <button class="ghost-btn edit-button" type="button">Edit</button>
             <button class="primary-btn cook-button" type="button">Cooked it</button>
             <button class="danger-btn delete-button" type="button">Delete</button>
           </div>

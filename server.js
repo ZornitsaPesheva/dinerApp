@@ -487,6 +487,9 @@ async function handleApi(request, response) {
     return;
   }
 
+  const cookMatch = url.pathname.match(/^\/api\/dishes\/([^/]+)\/cook$/);
+  const dishMatch = url.pathname.match(/^\/api\/dishes\/([^/]+)$/);
+
   if (request.method === 'POST' && url.pathname === '/api/dishes') {
     const payload = await readRequestBody(request);
     const name = typeof payload.name === 'string' ? payload.name.trim() : '';
@@ -518,8 +521,39 @@ async function handleApi(request, response) {
     return;
   }
 
-  const cookMatch = url.pathname.match(/^\/api\/dishes\/([^/]+)\/cook$/);
-  const dishMatch = url.pathname.match(/^\/api\/dishes\/([^/]+)$/);
+  if (request.method === 'PUT' && dishMatch) {
+    const dishId = dishMatch[1];
+    const payload = await readRequestBody(request);
+    const name = typeof payload.name === 'string' ? payload.name.trim() : '';
+    const notes = typeof payload.notes === 'string' ? payload.notes.trim() : '';
+
+    if (!name) {
+      sendJson(response, 400, { error: 'Dish name is required' });
+      return;
+    }
+
+    const dishes = await readDishes(user.sub);
+    const dish = dishes.find(item => item.id === dishId);
+
+    if (!dish) {
+      sendJson(response, 404, { error: 'Dish not found' });
+      return;
+    }
+
+    const nameTaken = dishes.some(item => item.id !== dishId && item.name.toLowerCase() === name.toLowerCase());
+
+    if (nameTaken) {
+      sendJson(response, 409, { error: 'Dish already exists' });
+      return;
+    }
+
+    dish.name = name;
+    dish.notes = notes;
+
+    await writeDishes(user.sub, dishes);
+    sendJson(response, 200, buildApiResponse(dishes));
+    return;
+  }
 
   if (request.method === 'POST' && cookMatch) {
     const dishId = cookMatch[1];
