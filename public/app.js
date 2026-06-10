@@ -26,6 +26,12 @@ const deleteConfirmModalElement = document.querySelector('#delete-confirm-modal'
 const deleteConfirmNameElement = document.querySelector('#delete-confirm-name');
 const deleteCancelButton = document.querySelector('#delete-cancel-button');
 const deleteConfirmButton = document.querySelector('#delete-confirm-button');
+const hasDeleteModal = Boolean(
+  deleteConfirmModalElement &&
+  deleteConfirmNameElement &&
+  deleteCancelButton &&
+  deleteConfirmButton
+);
 
 function detectLanguage() {
   const preferredLanguages = Array.isArray(navigator.languages) && navigator.languages.length > 0
@@ -187,10 +193,12 @@ function applyLanguage() {
   refreshButton.textContent = translate('refresh');
   document.querySelector('.panel > .card-header h2').textContent = translate('allRecipesTitle');
   document.querySelector('.section-note').textContent = translate('sectionNote');
-  deleteConfirmModalElement.querySelector('#delete-confirm-title').textContent = translate('deleteTitle');
-  deleteConfirmModalElement.querySelector('#delete-confirm-message').textContent = translate('deleteMessage');
-  deleteCancelButton.textContent = translate('cancel');
-  deleteConfirmButton.textContent = translate('confirm');
+  if (hasDeleteModal) {
+    deleteConfirmModalElement.querySelector('#delete-confirm-title').textContent = translate('deleteTitle');
+    deleteConfirmModalElement.querySelector('#delete-confirm-message').textContent = translate('deleteMessage');
+    deleteCancelButton.textContent = translate('cancel');
+    deleteConfirmButton.textContent = translate('confirm');
+  }
   document.querySelector('.site-footer').textContent = translate('footer');
 }
 
@@ -374,6 +382,14 @@ function clearDishUi() {
 }
 
 function openDeleteConfirmModal(dish, triggerButton) {
+  if (!hasDeleteModal) {
+    const shouldDelete = window.confirm(`${translate('deleteMessage')}\n${dish.name}`);
+    if (shouldDelete) {
+      deleteDish(dish.id);
+    }
+    return;
+  }
+
   state.pendingDeleteDish = dish;
   state.pendingDeleteTrigger = triggerButton;
   deleteConfirmNameElement.textContent = dish.name;
@@ -383,6 +399,10 @@ function openDeleteConfirmModal(dish, triggerButton) {
 }
 
 function closeDeleteConfirmModal() {
+  if (!hasDeleteModal) {
+    return;
+  }
+
   deleteConfirmModalElement.hidden = true;
   document.body.classList.remove('modal-open');
 
@@ -847,33 +867,35 @@ exitDemoButton.addEventListener('click', () => {
   form.reset();
 });
 
-deleteCancelButton.addEventListener('click', () => {
-  closeDeleteConfirmModal();
-});
-
-deleteConfirmButton.addEventListener('click', async () => {
-  const dish = state.pendingDeleteDish;
-
-  if (!dish) {
+if (hasDeleteModal) {
+  deleteCancelButton.addEventListener('click', () => {
     closeDeleteConfirmModal();
-    return;
-  }
+  });
 
-  closeDeleteConfirmModal();
-  await deleteDish(dish.id);
-});
+  deleteConfirmButton.addEventListener('click', async () => {
+    const dish = state.pendingDeleteDish;
 
-deleteConfirmModalElement.addEventListener('click', event => {
-  if (event.target === deleteConfirmModalElement) {
+    if (!dish) {
+      closeDeleteConfirmModal();
+      return;
+    }
+
     closeDeleteConfirmModal();
-  }
-});
+    await deleteDish(dish.id);
+  });
 
-document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !deleteConfirmModalElement.hidden) {
-    closeDeleteConfirmModal();
-  }
-});
+  deleteConfirmModalElement.addEventListener('click', event => {
+    if (event.target === deleteConfirmModalElement) {
+      closeDeleteConfirmModal();
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !deleteConfirmModalElement.hidden) {
+      closeDeleteConfirmModal();
+    }
+  });
+}
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {

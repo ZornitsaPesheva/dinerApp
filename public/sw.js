@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cook-planner-v1';
+const CACHE_NAME = 'cook-planner-v2';
 const APP_SHELL_ASSETS = [
   '/',
   '/index.html',
@@ -9,6 +9,14 @@ const APP_SHELL_ASSETS = [
   '/dinners.png',
   '/offline.html'
 ];
+
+const NETWORK_FIRST_ASSETS = new Set([
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/app.js',
+  '/manifest.webmanifest'
+]);
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -57,6 +65,30 @@ self.addEventListener('fetch', event => {
             return cachedApp;
           }
           return caches.match('/offline.html');
+        })
+    );
+    return;
+  }
+
+  if (NETWORK_FIRST_ASSETS.has(url.pathname)) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, responseCopy));
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          if (cached) {
+            return cached;
+          }
+
+          if (url.pathname === '/index.html' || url.pathname === '/') {
+            return caches.match('/offline.html');
+          }
+
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
         })
     );
     return;
