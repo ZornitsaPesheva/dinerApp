@@ -81,6 +81,8 @@ const texts = {
     suggestionLongest: '1. Longest since last cooked',
     suggestionLeast: '2. Least frequently cooked',
     suggestionFallback: 'Suggestion',
+    skipSuggestion: 'Skip',
+    noMoreSuggestions: 'No more suggestions right now. Press Refresh to start over.',
     addRecipesToSeeSuggestions: 'Add recipes to see suggestions.',
     emptyList: 'The list is empty. Add your first recipe.',
     noNotes: 'No notes.',
@@ -133,6 +135,8 @@ const texts = {
     suggestionLongest: '1. Най-дълго от последно готвене',
     suggestionLeast: '2. Най-рядко готвена',
     suggestionFallback: 'Предложение',
+    skipSuggestion: 'Пропусни',
+    noMoreSuggestions: 'Няма повече предложения в момента. Натиснете „Обнови", за да започнете отначало.',
     addRecipesToSeeSuggestions: 'Добавете рецепти, за да видите предложения.',
     emptyList: 'Списъкът е празен. Добавете първата си рецепта.',
     noNotes: 'Няма описание.',
@@ -266,7 +270,9 @@ const state = {
   editingDishId: null,
   focusDishId: null,
   pendingDeleteDish: null,
-  pendingDeleteTrigger: null
+  pendingDeleteTrigger: null,
+  dishes: [],
+  skippedSuggestionIds: new Set()
 };
 
 let googleButtonInitialized = false;
@@ -376,9 +382,63 @@ function syncFormMode() {
 }
 
 function clearDishUi() {
+  state.dishes = [];
+  state.skippedSuggestionIds.clear();
   suggestionsContainer.innerHTML = '';
   dishesContainer.innerHTML = '';
   setMessage('');
+}
+
+function buildSuggestionsFromDishes(dishes, skippedIds = new Set()) {
+  const normalized = dishes.map(d => ({
+    id: d.id,
+    name: d.name,
+    notes: d.notes || '',
+    cookCount: d.cookCount || 0,
+    lastCookedAt: d.lastCookedAt || null,
+    cookHistory: Array.isArray(d.cookHistory) ? d.cookHistory : []
+  }));
+
+  const byOldest = [...normalized].sort((a, b) => {
+    const aNever = a.cookCount === 0 ? 0 : 1;
+    const bNever = b.cookCount === 0 ? 0 : 1;
+    if (aNever !== bNever) return aNever - bNever;
+    const aLast = a.lastCookedAt || '0000-00-00';
+    const bLast = b.lastCookedAt || '0000-00-00';
+    if (aLast !== bLast) return aLast.localeCompare(bLast);
+    if (a.cookCount !== b.cookCount) return a.cookCount - b.cookCount;
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase(), locale);
+  });
+
+  const byRarest = [...normalized].sort((a, b) => {
+    if (a.cookCount !== b.cookCount) return a.cookCount - b.cookCount;
+    const aLast = a.lastCookedAt || '0000-00-00';
+    const bLast = b.lastCookedAt || '0000-00-00';
+    if (aLast !== bLast) return aLast.localeCompare(bLast);
+    return a.name.localeCompare(b.name, locale);
+  });
+
+  const oldest = byOldest.find(d => !skippedIds.has(d.id));
+  const rarest = byRarest.find(d => d.id !== oldest?.id && !skippedIds.has(d.id));
+  return [oldest, rarest].filter(Boolean);
+}
+
+function updateDashboard(dishes, { resetSkipped = false } = {}) {
+  state.dishes = Array.isArray(dishes) ? dishes : [];
+
+  if (resetSkipped) {
+    state.skippedSuggestionIds.clear();
+  } else {
+    const dishIds = new Set(state.dishes.map(d => d.id));
+    for (const skippedId of state.skippedSuggestionIds) {
+      if (!dishIds.has(skippedId)) {
+        state.skippedSuggestionIds.delete(skippedId);
+      }
+    }
+  }
+
+  renderSuggestions();
+  renderDishes(state.dishes);
 }
 
 function openDeleteConfirmModal(dish, triggerButton) {
@@ -505,11 +565,15 @@ async function resetSession(message = '', type = '') {
   setAuthMessage(message, type);
 }
 
-function renderSuggestions(suggestions) {
+function renderSuggestions() {
+  const suggestions = buildSuggestionsFromDishes(state.dishes, state.skippedSuggestionIds);
   suggestionsContainer.innerHTML = '';
 
   if (suggestions.length === 0) {
-    suggestionsContainer.innerHTML = `<div class="empty-state">${translate('addRecipesToSeeSuggestions')}</div>`;
+    const emptyText = state.dishes.length === 0
+      ? translate('addRecipesToSeeSuggestions')
+      : translate('noMoreSuggestions');
+    suggestionsContainer.innerHTML = `<div class="empty-state">${emptyText}</div>`;
     return;
   }
 
@@ -521,6 +585,11 @@ function renderSuggestions(suggestions) {
     fragment.querySelector('.suggestion-name').textContent = dish.name;
     fragment.querySelector('.suggestion-meta').textContent =
       `${translate('cookedTimes', { count: dish.cookCount })} • ${translate('lastCooked', { date: formatDate(dish.lastCookedAt) })}`;
+    fragment.querySelector('.skip-button').textContent = translate('skipSuggestion');
+    fragment.querySelector('.skip-button').addEventListener('click', () => {
+      state.skippedSuggestionIds.add(dish.id);
+      renderSuggestions();
+    });
     fragment.querySelector('.cook-button').textContent = translate('cookedIt');
     fragment.querySelector('.cook-button').addEventListener('click', async () => {
       await cookDish(dish.id);
@@ -541,15 +610,13 @@ async function cookDish(dishId) {
     dish.lastCookedAt = cookedAt;
     saveDemoDishes(dishes);
     const result = localBuildApiResponse(dishes);
-    renderSuggestions(result.suggestions);
-    renderDishes(result.dishes);
+    updateDashboard(result.dishes);
     return;
   }
 
   try {
     const data = await requestJson(`/api/dishes/${dishId}/cook`, { method: 'POST' });
-    renderSuggestions(data.suggestions);
-    renderDishes(data.dishes);
+    updateDashboard(data.dishes);
   } catch (error) {
     if (error.status === 401) {
       await resetSession(translate('sessionExpired'), 'error');
@@ -572,8 +639,7 @@ async function deleteDish(dishId) {
 
     saveDemoDishes(remainingDishes);
     const result = localBuildApiResponse(remainingDishes);
-    renderSuggestions(result.suggestions);
-    renderDishes(result.dishes);
+    updateDashboard(result.dishes);
     setMessage(translate('recipeDeleted'), 'success');
     return;
   }
@@ -584,8 +650,7 @@ async function deleteDish(dishId) {
       form.reset();
       clearEditMode();
     }
-    renderSuggestions(data.suggestions);
-    renderDishes(data.dishes);
+    updateDashboard(data.dishes);
     setMessage(translate('recipeDeleted'), 'success');
   } catch (error) {
     if (error.status === 401) {
@@ -650,15 +715,13 @@ function renderDishes(dishes) {
 async function loadData() {
   if (state.demoMode) {
     const result = localBuildApiResponse(getDemoDishes());
-    renderSuggestions(result.suggestions);
-    renderDishes(result.dishes);
+    updateDashboard(result.dishes, { resetSkipped: true });
     return;
   }
 
   try {
     const data = await requestJson('/api/dishes');
-    renderSuggestions(data.suggestions);
-    renderDishes(data.dishes);
+    updateDashboard(data.dishes, { resetSkipped: true });
   } catch (error) {
     if (error.status === 401) {
       await resetSession(translate('sessionExpired'), 'error');
@@ -689,8 +752,7 @@ async function handleGoogleCredentialResponse(response) {
         body: JSON.stringify({ dishes: demoDishes })
       });
       clearDemoData();
-      renderSuggestions(data.suggestions);
-      renderDishes(data.dishes);
+      updateDashboard(data.dishes, { resetSkipped: true });
       setMessage(translate('demoRecipesMerged', { count: demoDishes.length }), 'success');
     } else {
       await loadData();
@@ -735,8 +797,7 @@ form.addEventListener('submit', async event => {
       const updatedResult = localBuildApiResponse(dishes);
       form.reset();
       clearEditMode();
-      renderSuggestions(updatedResult.suggestions);
-      renderDishes(updatedResult.dishes);
+      updateDashboard(updatedResult.dishes);
       setMessage(translate('recipeUpdated'), 'success');
       return;
     }
@@ -752,8 +813,7 @@ form.addEventListener('submit', async event => {
     saveDemoDishes(dishes);
     form.reset();
     const result = localBuildApiResponse(dishes);
-    renderSuggestions(result.suggestions);
-    renderDishes(result.dishes);
+    updateDashboard(result.dishes);
     setMessage(translate('recipeAdded'), 'success');
     nameInput.focus();
     return;
@@ -771,8 +831,7 @@ form.addEventListener('submit', async event => {
     });
     form.reset();
     clearEditMode();
-    renderSuggestions(data.suggestions);
-    renderDishes(data.dishes);
+    updateDashboard(data.dishes);
     setMessage(translate(isEditing ? 'recipeUpdated' : 'recipeAdded'), 'success');
     if (!isEditing) {
       nameInput.focus();

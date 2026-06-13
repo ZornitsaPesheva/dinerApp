@@ -314,6 +314,16 @@ button:hover {
   flex-wrap: wrap;
 }
 
+.suggestion-actions {
+  width: min(100%, 240px);
+  justify-content: flex-end;
+}
+
+.suggestion-actions .ghost-btn,
+.suggestion-actions .primary-btn {
+  flex: 1;
+}
+
 .dish-notes {
   margin-bottom: 0;
 }
@@ -439,6 +449,7 @@ body.modal-open {
 
   .cook-button,
   .delete-button,
+  .skip-button,
   .ghost-btn,
   .primary-btn {
     width: 100%;
